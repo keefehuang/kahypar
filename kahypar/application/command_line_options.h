@@ -729,13 +729,7 @@ void processCommandLineInput(Context& context, int argc, char* argv[]) {
   }
 }
 
-
-void parseIniToContext(Context& context, const std::string& ini_filename) {
-  std::ifstream file(ini_filename.c_str());
-  if (!file) {
-    std::cerr << "Could not load context file at: " << ini_filename << std::endl;
-    std::exit(-1);
-  }
+void parseToContext(Context& context, std::istream& ini_stream) {
   const int num_columns = 80;
 
   po::variables_map cmd_vm;
@@ -748,11 +742,26 @@ void parseIniToContext(Context& context, const std::string& ini_filename) {
   .add(createRefinementOptionsDescription(context, num_columns, false))
   .add(createEvolutionaryOptionsDescription(context, num_columns));
 
-  po::store(po::parse_config_file(file, ini_line_options, true), cmd_vm);
+  po::store(po::parse_config_file(ini_stream, ini_line_options, true), cmd_vm);
   po::notify(cmd_vm);
 
   if (context.partition.use_individual_part_weights) {  // Note(Lars): This affects flow network sizes!
     context.partition.epsilon = 0;
   }
+}
+
+void parseStringToContext(Context& context, const std::string& ini_string) {
+  std::istringstream stream(ini_string);
+  parseToContext(context, stream);
+}
+
+void parseIniToContext(Context& context, const std::string& ini_filename) {
+  std::ifstream file(ini_filename.c_str());
+  if (!file) {
+    std::cerr << "Could not load context file at: " << ini_filename << std::endl;
+    std::exit(-1);
+  }
+  
+  parseToContext(context, file);
 }
 }  // namespace kahypar
